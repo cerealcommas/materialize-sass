@@ -1,9 +1,10 @@
+//= require ./materialize/cash
+//= require ./materialize/velocity.min
 //= require ./materialize/global
 //= require ./materialize/autocomplete
 //= require ./materialize/buttons
 //= require ./materialize/cards
 //= require ./materialize/carousel
-//= require ./materialize/cash
 //= require ./materialize/characterCounter
 //= require ./materialize/chips
 //= require ./materialize/collapsible
@@ -26,4 +27,4 @@
 //= require ./materialize/toasts
 //= require ./materialize/tooltip
 //= require ./materialize/waves
-//= require ./materialize/velocity.min
+
