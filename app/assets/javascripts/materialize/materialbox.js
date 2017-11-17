@@ -1,29 +1,23 @@
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 (function ($, Vel) {
   'use strict';
 
-  var _defaults = {
+  let _defaults = {
     inDuration: 275,
-    outDuration: 200
+    outDuration: 200,
   };
 
   /**
    * @class
    *
    */
-
-  var Materialbox = function () {
+  class Materialbox {
     /**
      * Construct Materialbox instance
      * @constructor
      * @param {Element} el
      * @param {Object} options
      */
-    function Materialbox(el, options) {
-      _classCallCheck(this, Materialbox);
+    constructor(el, options) {
 
       // If exists, destroy and reinitialize
       if (!!el.M_Materialbox) {
@@ -57,376 +51,348 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       this._setupEventHandlers();
     }
 
-    _createClass(Materialbox, [{
-      key: 'destroy',
+    static get defaults() {
+      return _defaults;
+    }
 
+    static init($els, options) {
+      let arr = [];
+      $els.each(function() {
+        arr.push(new Materialbox(this, options));
+      });
+      return arr;
+    }
 
-      /**
-       * Teardown component
-       */
-      value: function destroy() {
-        this._removeEventHandlers();
-        this.el.M_Materialbox = undefined;
+    /**
+     * Get Instance
+     */
+    static getInstance(el) {
+      let domElem = !!el.jquery ? el[0] : el;
+      return domElem.M_Materialbox;
+    }
+
+    /**
+     * Teardown component
+     */
+    destroy() {
+      this._removeEventHandlers();
+      this.el.M_Materialbox = undefined;
+    }
+
+    /**
+     * Setup Event Handlers
+     */
+    _setupEventHandlers() {
+      this._handleMaterialboxClickBound = this._handleMaterialboxClick.bind(this);
+      this.el.addEventListener('click', this._handleMaterialboxClickBound);
+    }
+
+    /**
+     * Remove Event Handlers
+     */
+    removeEventHandlers() {
+      this.el.removeEventListener('click', this._handleMaterialboxClickBound);
+    }
+
+    /**
+     * Handle Materialbox Click
+     * @param {Event} e
+     */
+    _handleMaterialboxClick(e) {
+      // If already modal, return to original
+      if (this.doneAnimating === false ||
+          (this.overlayActive && this.doneAnimating)) {
+        this.close();
+      } else {
+        this.open();
       }
+    }
 
-      /**
-       * Setup Event Handlers
-       */
-
-    }, {
-      key: '_setupEventHandlers',
-      value: function _setupEventHandlers() {
-        this._handleMaterialboxClickBound = this._handleMaterialboxClick.bind(this);
-        this.el.addEventListener('click', this._handleMaterialboxClickBound);
+    /**
+     * Handle Window Scroll
+     */
+    _handleWindowScroll() {
+      if (this.overlayActive) {
+        this.close();
       }
+    }
 
-      /**
-       * Remove Event Handlers
-       */
-
-    }, {
-      key: 'removeEventHandlers',
-      value: function removeEventHandlers() {
-        this.el.removeEventListener('click', this._handleMaterialboxClickBound);
+    /**
+     * Handle Window Resize
+     */
+    _handleWindowResize() {
+      if (this.overlayActive) {
+        this.close();
       }
+    }
 
-      /**
-       * Handle Materialbox Click
-       * @param {Event} e
-       */
-
-    }, {
-      key: '_handleMaterialboxClick',
-      value: function _handleMaterialboxClick(e) {
-        // If already modal, return to original
-        if (this.doneAnimating === false || this.overlayActive && this.doneAnimating) {
-          this.close();
-        } else {
-          this.open();
-        }
+    /**
+     * Handle Window Resize
+     * @param {Event} e
+     */
+    _handleWindowEscape(e) {
+      // ESC key
+      if (e.keyCode === 27 &&
+          this.doneAnimating &&
+          this.overlayActive) {
+        this.close();
       }
+    }
 
-      /**
-       * Handle Window Scroll
-       */
-
-    }, {
-      key: '_handleWindowScroll',
-      value: function _handleWindowScroll() {
-        if (this.overlayActive) {
-          this.close();
-        }
-      }
-
-      /**
-       * Handle Window Resize
-       */
-
-    }, {
-      key: '_handleWindowResize',
-      value: function _handleWindowResize() {
-        if (this.overlayActive) {
-          this.close();
-        }
-      }
-
-      /**
-       * Handle Window Resize
-       * @param {Event} e
-       */
-
-    }, {
-      key: '_handleWindowEscape',
-      value: function _handleWindowEscape(e) {
-        // ESC key
-        if (e.keyCode === 27 && this.doneAnimating && this.overlayActive) {
-          this.close();
-        }
-      }
-
-      /**
-       * Find ancestors with overflow: hidden; and make visible
-       */
-
-    }, {
-      key: '_makeAncestorsOverflowVisible',
-      value: function _makeAncestorsOverflowVisible() {
-        this.ancestorsChanged = $();
-        var ancestor = this.placeholder[0].parentNode;
-        while (ancestor !== null && !$(ancestor).is(document)) {
-          var curr = $(ancestor);
-          if (curr.css('overflow') !== 'visible') {
-            curr.css('overflow', 'visible');
-            if (this.ancestorsChanged === undefined) {
-              this.ancestorsChanged = curr;
-            } else {
-              this.ancestorsChanged = this.ancestorsChanged.add(curr);
-            }
+    /**
+     * Find ancestors with overflow: hidden; and make visible
+     */
+    _makeAncestorsOverflowVisible() {
+      this.ancestorsChanged = $();
+      let ancestor = this.placeholder[0].parentNode;
+      while (ancestor !== null && !$(ancestor).is(document)) {
+        let curr = $(ancestor);
+        if (curr.css('overflow') !== 'visible') {
+          curr.css('overflow', 'visible');
+          if (this.ancestorsChanged === undefined) {
+            this.ancestorsChanged = curr;
           }
-          ancestor = ancestor.parentNode;
+          else {
+            this.ancestorsChanged = this.ancestorsChanged.add(curr);
+          }
         }
+        ancestor = ancestor.parentNode;
+      }
+    }
+
+    /**
+     * Animate image in
+     */
+    _animateImageIn() {
+      let velocityOptions = {
+        duration: this.options.inDuration,
+        queue: false,
+        ease: 'easeOutQuad',
+        complete: () => {
+          this.doneAnimating = true;
+        }
+      };
+
+      let velocityProperties = {
+        height: this.newHeight,
+        width: this.newWidth,
+        left: M.getDocumentScrollLeft() + this.windowWidth/2 - this.placeholder.offset().left - this.newWidth/2,
+        top: M.getDocumentScrollTop() + this.windowHeight/2 - this.placeholder.offset().top - this.newHeight/2
+      };
+
+      if (this.$el.hasClass('responsive-img')) {
+        velocityProperties.maxWidth = [this.newWidth, this.newWidth];
+        velocityProperties.width = [velocityProperties.width, this.originalWidth];
+      } else {
+        velocityProperties.left = [velocityProperties.left, 0];
+        velocityProperties.top = [velocityProperties.top, 0];
       }
 
-      /**
-       * Animate image in
-       */
+      Vel(this.el, velocityProperties, velocityOptions);
+    }
 
-    }, {
-      key: '_animateImageIn',
-      value: function _animateImageIn() {
-        var _this = this;
+    /**
+     * Animate image out
+     */
+    _animateImageOut() {
+      let velocityOptions = {
+        duration: this.options.outDuration,
+        queue: false,
+        ease: 'easeOutQuad',
+        complete: () => {
+          this.placeholder.css({
+            height: '',
+            width: '',
+            position: '',
+            top: '',
+            left: ''
+          });
 
-        var velocityOptions = {
-          duration: this.options.inDuration,
-          queue: false,
-          ease: 'easeOutQuad',
-          complete: function () {
-            _this.doneAnimating = true;
+          this.$el.removeAttr('style');
+          this.$el.attr('style', this.originInlineStyles);
+
+          // Remove class
+          this.$el.removeClass('active');
+          this.doneAnimating = true;
+
+          // Remove overflow overrides on ancestors
+          if (this.ancestorsChanged.length) {
+            this.ancestorsChanged.css('overflow', '');
           }
-        };
-
-        var velocityProperties = {
-          height: this.newHeight,
-          width: this.newWidth,
-          left: M.getDocumentScrollLeft() + this.windowWidth / 2 - this.placeholder.offset().left - this.newWidth / 2,
-          top: M.getDocumentScrollTop() + this.windowHeight / 2 - this.placeholder.offset().top - this.newHeight / 2
-        };
-
-        if (this.$el.hasClass('responsive-img')) {
-          velocityProperties.maxWidth = [this.newWidth, this.newWidth];
-          velocityProperties.width = [velocityProperties.width, this.originalWidth];
-        } else {
-          velocityProperties.left = [velocityProperties.left, 0];
-          velocityProperties.top = [velocityProperties.top, 0];
         }
+      };
 
-        Vel(this.el, velocityProperties, velocityOptions);
-      }
-
-      /**
-       * Animate image out
-       */
-
-    }, {
-      key: '_animateImageOut',
-      value: function _animateImageOut() {
-        var _this2 = this;
-
-        var velocityOptions = {
-          duration: this.options.outDuration,
-          queue: false,
-          ease: 'easeOutQuad',
-          complete: function () {
-            _this2.placeholder.css({
-              height: '',
-              width: '',
-              position: '',
-              top: '',
-              left: ''
-            });
-
-            _this2.$el.removeAttr('style');
-            _this2.$el.attr('style', _this2.originInlineStyles);
-
-            // Remove class
-            _this2.$el.removeClass('active');
-            _this2.doneAnimating = true;
-
-            // Remove overflow overrides on ancestors
-            if (_this2.ancestorsChanged.length) {
-              _this2.ancestorsChanged.css('overflow', '');
-            }
-          }
-        };
-
-        Vel(this.el, {
+      Vel(
+        this.el,
+        {
           width: this.originalWidth,
           height: this.originalHeight,
           left: 0,
           top: 0
-        }, velocityOptions);
-      }
+        },
+        velocityOptions
+      );
+    }
 
-      /**
-       * Update open and close vars
-       */
+    /**
+     * Update open and close vars
+     */
+    _updateVars() {
+      this.windowWidth = window.innerWidth;
+      this.windowHeight = window.innerHeight;
+      this.caption = this.el.getAttribute('data-caption') || "";
+    }
 
-    }, {
-      key: '_updateVars',
-      value: function _updateVars() {
-        this.windowWidth = window.innerWidth;
-        this.windowHeight = window.innerHeight;
-        this.caption = this.el.getAttribute('data-caption') || "";
-      }
+    /**
+     * Open Materialbox
+     */
+    open() {
+      this._updateVars();
+      this.originalWidth = this.el.getBoundingClientRect().width;
+      this.originalHeight = this.el.getBoundingClientRect().height;
 
-      /**
-       * Open Materialbox
-       */
+      // Set states
+      this.doneAnimating = false;
+      this.$el.addClass('active');
+      this.overlayActive = true;
 
-    }, {
-      key: 'open',
-      value: function open() {
-        var _this3 = this;
+      // Set positioning for placeholder
+      this.placeholder.css({
+        width: this.placeholder[0].getBoundingClientRect().width + 'px',
+        height: this.placeholder[0].getBoundingClientRect().height + 'px',
+        position: 'relative',
+        top: 0,
+        left: 0
+      });
 
-        this._updateVars();
-        this.originalWidth = this.el.getBoundingClientRect().width;
-        this.originalHeight = this.el.getBoundingClientRect().height;
+      this._makeAncestorsOverflowVisible();
 
-        // Set states
-        this.doneAnimating = false;
-        this.$el.addClass('active');
-        this.overlayActive = true;
+      // Set css on origin
+      this.$el.css({
+        position: 'absolute',
+        'z-index': 1000,
+        'will-change': 'left, top, width, height'
+      });
 
-        // Set positioning for placeholder
-        this.placeholder.css({
-          width: this.placeholder[0].getBoundingClientRect().width + 'px',
-          height: this.placeholder[0].getBoundingClientRect().height + 'px',
-          position: 'relative',
-          top: 0,
-          left: 0
-        });
-
-        this._makeAncestorsOverflowVisible();
-
-        // Set css on origin
-        this.$el.css({
-          position: 'absolute',
-          'z-index': 1000,
-          'will-change': 'left, top, width, height'
-        });
-
-        // Add overlay
-        this.$overlay = $('<div id="materialbox-overlay"></div>').css({
+      // Add overlay
+      this.$overlay = $('<div id="materialbox-overlay"></div>')
+        .css({
           opacity: 0
-        }).one('click', function () {
-          if (_this3.doneAnimating) {
-            _this3.close();
+        })
+        .one('click', () => {
+          if (this.doneAnimating) {
+            this.close();
           }
         });
 
-        // Put before in origin image to preserve z-index layering.
-        this.$el.before(this.$overlay);
+      // Put before in origin image to preserve z-index layering.
+      this.$el.before(this.$overlay);
 
-        // Set dimensions if needed
-        var overlayOffset = this.$overlay[0].getBoundingClientRect();
-        this.$overlay.css({
-          width: this.windowWidth + 'px',
-          height: this.windowHeight + 'px',
-          left: -1 * overlayOffset.left + 'px',
-          top: -1 * overlayOffset.top + 'px'
-        });
+      // Set dimensions if needed
+      let overlayOffset = this.$overlay[0].getBoundingClientRect();
+      this.$overlay.css({
+        width: this.windowWidth + 'px',
+        height: this.windowHeight + 'px',
+        left: -1 * overlayOffset.left + 'px',
+        top: -1 * overlayOffset.top + 'px'
+      });
 
-        // Animate Overlay
-        Vel(this.$overlay[0], { opacity: 1 }, { duration: this.options.inDuration, queue: false, ease: 'easeOutQuad' });
+      // Animate Overlay
+      Vel(
+        this.$overlay[0],
+        {opacity: 1},
+        {duration: this.options.inDuration, queue: false, ease: 'easeOutQuad'}
+      );
 
-        // Add and animate caption if it exists
-        if (this.caption !== "") {
-          this.$photoCaption = $('<div class="materialbox-caption"></div>');
-          this.$photoCaption.text(this.caption);
-          $('body').append(this.$photoCaption);
-          this.$photoCaption.css({ "display": "inline" });
-          Vel(this.$photoCaption[0], { opacity: 1 }, { duration: this.options.inDuration, queue: false, ease: 'easeOutQuad' });
-        }
-
-        // Resize Image
-        var ratio = 0;
-        var widthPercent = this.originalWidth / this.windowWidth;
-        var heightPercent = this.originalHeight / this.windowHeight;
-        this.newWidth = 0;
-        this.newHeight = 0;
-
-        if (widthPercent > heightPercent) {
-          ratio = this.originalHeight / this.originalWidth;
-          this.newWidth = this.windowWidth * 0.9;
-          this.newHeight = this.windowWidth * 0.9 * ratio;
-        } else {
-          ratio = this.originalWidth / this.originalHeight;
-          this.newWidth = this.windowHeight * 0.9 * ratio;
-          this.newHeight = this.windowHeight * 0.9;
-        }
-
-        this._animateImageIn();
-
-        // Handle Exit triggers
-        this._handleWindowScrollBound = this._handleWindowScroll.bind(this);
-        this._handleWindowResizeBound = this._handleWindowResize.bind(this);
-        this._handleWindowEscapeBound = this._handleWindowEscape.bind(this);
-
-        window.addEventListener('scroll', this._handleWindowScrollBound);
-        window.addEventListener('resize', this._handleWindowResizeBound);
-        window.addEventListener('keyup', this._handleWindowEscapeBound);
+      // Add and animate caption if it exists
+      if (this.caption !== "") {
+        this.$photoCaption = $('<div class="materialbox-caption"></div>');
+        this.$photoCaption.text(this.caption);
+        $('body').append(this.$photoCaption);
+        this.$photoCaption.css({ "display": "inline" });
+        Vel(
+          this.$photoCaption[0],
+          {opacity: 1},
+          {duration: this.options.inDuration, queue: false, ease: 'easeOutQuad'}
+        );
       }
 
-      /**
-       * Close Materialbox
-       */
+      // Resize Image
+      let ratio = 0;
+      let widthPercent = this.originalWidth / this.windowWidth;
+      let heightPercent = this.originalHeight / this.windowHeight;
+      this.newWidth = 0;
+      this.newHeight = 0;
 
-    }, {
-      key: 'close',
-      value: function close() {
-        var _this4 = this;
-
-        this._updateVars();
-        this.doneAnimating = false;
-
-        Vel(this.el, 'stop');
-        Vel(this.$overlay[0], 'stop');
-        if (this.caption !== "") {
-          Vel(this.$photoCaption[0], 'stop');
-        }
-
-        // disable exit handlers
-        window.removeEventListener('scroll', this._handleWindowScrollBound);
-        window.removeEventListener('resize', this._handleWindowResizeBound);
-        window.removeEventListener('keyup', this._handleWindowEscapeBound);
-
-        Vel(this.$overlay[0], { opacity: 0 }, { duration: this.options.outDuration, queue: false, ease: 'easeOutQuad', complete: function () {
-            _this4.overlayActive = false;
-            _this4.$overlay.remove();
-          } });
-
-        this._animateImageOut();
-
-        // Remove Caption + reset css settings on image
-        if (this.caption !== "") {
-          Vel(this.$photoCaption[0], { opacity: 0 }, { duration: this.options.outDuration, queue: false, ease: 'easeOutQuad', complete: function () {
-              _this4.$photoCaption.remove();
-            } });
-        }
+      if (widthPercent > heightPercent) {
+        ratio = this.originalHeight / this.originalWidth;
+        this.newWidth = this.windowWidth * 0.9;
+        this.newHeight = this.windowWidth * 0.9 * ratio;
       }
-    }], [{
-      key: 'init',
-      value: function init($els, options) {
-        var arr = [];
-        $els.each(function () {
-          arr.push(new Materialbox(this, options));
-        });
-        return arr;
+      else {
+        ratio = this.originalWidth / this.originalHeight;
+        this.newWidth = this.windowHeight * 0.9 * ratio;
+        this.newHeight = this.windowHeight * 0.9;
       }
 
-      /**
-       * Get Instance
-       */
+      this._animateImageIn();
 
-    }, {
-      key: 'getInstance',
-      value: function getInstance(el) {
-        var domElem = !!el.jquery ? el[0] : el;
-        return domElem.M_Materialbox;
-      }
-    }, {
-      key: 'defaults',
-      get: function () {
-        return _defaults;
-      }
-    }]);
+      // Handle Exit triggers
+      this._handleWindowScrollBound = this._handleWindowScroll.bind(this);
+      this._handleWindowResizeBound = this._handleWindowResize.bind(this);
+      this._handleWindowEscapeBound = this._handleWindowEscape.bind(this);
 
-    return Materialbox;
-  }();
+      window.addEventListener('scroll', this._handleWindowScrollBound);
+      window.addEventListener('resize', this._handleWindowResizeBound);
+      window.addEventListener('keyup', this._handleWindowEscapeBound);
+    }
+
+    /**
+     * Close Materialbox
+     */
+    close() {
+      this._updateVars();
+      this.doneAnimating = false;
+
+      Vel(this.el, 'stop');
+      Vel(this.$overlay[0], 'stop');
+      if (this.caption !== "") {
+        Vel(this.$photoCaption[0], 'stop');
+      }
+
+      // disable exit handlers
+      window.removeEventListener('scroll', this._handleWindowScrollBound);
+      window.removeEventListener('resize', this._handleWindowResizeBound);
+      window.removeEventListener('keyup', this._handleWindowEscapeBound);
+
+      Vel(
+        this.$overlay[0],
+        {opacity: 0},
+        {duration: this.options.outDuration, queue: false, ease: 'easeOutQuad', complete: () => {
+          this.overlayActive = false;
+          this.$overlay.remove();
+        }}
+      );
+
+      this._animateImageOut();
+
+      // Remove Caption + reset css settings on image
+      if (this.caption !== "") {
+        Vel(
+          this.$photoCaption[0],
+          {opacity: 0},
+          {duration: this.options.outDuration, queue: false, ease: 'easeOutQuad', complete: () => {
+            this.$photoCaption.remove();
+          }}
+        );
+      }
+    }
+  }
 
   M.Materialbox = Materialbox;
 
   if (M.jQueryLoaded) {
     M.initializeJqueryWrapper(Materialbox, 'materialbox', 'M_Materialbox');
   }
-})(cash, M.Vel);
+
+}( cash, M.Vel ));
